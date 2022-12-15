@@ -1,24 +1,26 @@
 import plotly.express as px
 import pandas as pd
 
-from datetime import datetime, timedelta
+from datetime import datetime
+from typing import Optional
 
-from kumareport.database import Database
+from .database import Database
 
 
-def show_chart_plotly(days, tagname=None):
-    date = datetime.now() - timedelta(days=days)
-
+def chart_plotly(
+    start: datetime, end: datetime, tagname=None, caption: Optional[str] = None
+):
+    """Returns a plotly chart for the given timespan."""
     db = Database.db
 
     excel = {}
     cur = db.cursor()
     if tagname == None or tagname == '':
-        cur.execute('SELECT monitor.id, monitor.name from monitor JOIN monitor_tag on (monitor.id = monitor_tag.monitor_id) JOIN tag on (tag.id = monitor_tag.tag_id) where monitor.active = 1')
+        cur.execute('SELECT monitor.id, monitor.name from monitor where monitor.active = 1')
     else:
         cur.execute('SELECT monitor.id, monitor.name from monitor JOIN monitor_tag on (monitor.id = monitor_tag.monitor_id) JOIN tag on (tag.id = monitor_tag.tag_id) where tag.name = ? and monitor.active = 1', (tagname, ))
     result = cur.fetchall()
-    
+
     for i in result:
         mon_id = i[0]
         mon_name = i[1]
@@ -34,8 +36,7 @@ def show_chart_plotly(days, tagname=None):
                 excel['Uptime'] = {}
             excel['Id'][i] = mon_id
             excel['Name'][i] = str(mon_name)
-            excel['Uptime'][i] = int(db.percent_by_monitor_id(mon_id, date))
+            excel['Uptime'][i] = db.percent_by_monitor_id(mon_id, start, end)
 
     data = pd.DataFrame.from_dict(excel)
-    fig = px.bar(data, x='Name', y='Uptime', hover_data=['Name'])
-    fig.show()
+    return px.bar(data, x='Name', y='Uptime', hover_data=['Name'], title=caption)
