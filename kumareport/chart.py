@@ -36,7 +36,7 @@ def chart_plotly(
                 excel['Uptime'] = {}
             excel['Id'][i] = mon_id
             excel['Name'][i] = str(mon_name)
-            excel['Uptime'][i] = db.percent_by_monitor_id(mon_id, start, end)
+            excel['Uptime'][i] = db.percent_by_monitor_id_2(mon_id, start, end)
 
     data = pd.DataFrame.from_dict(excel)
     return px.bar(data, x='Name', y='Uptime', hover_data=['Name'], title=caption)
