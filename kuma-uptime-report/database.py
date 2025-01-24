@@ -33,7 +33,11 @@ class Database:
             """
             SELECT COUNT(*) 
             FROM heartbeat 
-            WHERE monitor_id=? AND down_count=0 AND time>=? AND time<?
+            WHERE monitor_id=? 
+            AND down_count=0 
+            AND time>=? 
+            AND time<? 
+            AND ((down_count = 0) OR (down_count > 1 AND status = 1))
             """,
             (monitor_id, start, end)
         )
