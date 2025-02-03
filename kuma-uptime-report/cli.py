@@ -19,7 +19,9 @@ or alternatively use --days to generate a report for the last X days.
 @click.option('--end', help='End date in the format yyyy-mm-dd.', type=str)
 @click.option('--days', '-d', help='Number of days to include in the report (if --start and --end are not provided).',
               type=int)
-def cli(db: str, start: str, end: str, days: int, tag: str, caption: str):
+@click.option('--min-y', help='Minimum y-axis value for the chart.', type=int, default=0)
+
+def cli(db: str, start: str, end: str, days: int, tag: str, caption: str, min_y: int):
     """
     Command-line interface to generate uptime reports from Uptime Kuma database.
     """
@@ -59,7 +61,7 @@ def cli(db: str, start: str, end: str, days: int, tag: str, caption: str):
 
     try:
         # Generate chart
-        chart = chart_plotly(start=start_date, end=end_date, tagname=tag, caption=caption)
+        chart = chart_plotly(start=start_date, end=end_date, tagname=tag, caption=caption, min_y=min_y)
 
         if sys.stdout.isatty():  # Show interactive chart if run in terminal
             chart.show()

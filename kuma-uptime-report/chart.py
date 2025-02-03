@@ -9,7 +9,8 @@ def chart_plotly(
         start: datetime,
         end: datetime,
         tagname: Optional[str] = None,
-        caption: Optional[str] = None
+        caption: Optional[str] = None,
+        min_y: int = 0
 ):
     """Returns a Plotly chart for the given timespan."""
     db = Database.db
@@ -41,5 +42,7 @@ def chart_plotly(
     df = pd.DataFrame(report_data)
     if df.empty:
         raise ValueError("No uptime data available for the selected period.")
+    fig = px.bar(df, x="Name", y="Uptime", title=caption, hover_data=["Uptime"])
+    fig.update_layout(yaxis=dict(range=[min_y, 100]))
 
-    return px.bar(df, x="Name", y="Uptime", title=caption, hover_data=["Uptime"])
+    return fig
