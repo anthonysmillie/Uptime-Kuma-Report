@@ -19,33 +19,43 @@ from .report import (
 )
 
 
-def _days_in_previous_month(today: datetime) -> int:
-    """Days in the calendar month immediately preceding `today`."""
-    if today.month == 1:
-        prev_year, prev_month = today.year - 1, 12
+def _previous_calendar_month(today: datetime) -> Tuple[datetime, datetime, int]:
+    """The full previous calendar month. Returns (start, end_exclusive, day_count)."""
+    first_of_current = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if first_of_current.month == 1:
+        prev_year, prev_month = first_of_current.year - 1, 12
     else:
-        prev_year, prev_month = today.year, today.month - 1
-    return calendar.monthrange(prev_year, prev_month)[1]
+        prev_year, prev_month = first_of_current.year, first_of_current.month - 1
+    days_in_prev = calendar.monthrange(prev_year, prev_month)[1]
+    start = datetime(prev_year, prev_month, 1)
+    return start, first_of_current, days_in_prev
+
+
+def _previous_calendar_week(today: datetime) -> Tuple[datetime, datetime, int]:
+    """The full previous Mon-Sun. Returns (start, end_exclusive, 7)."""
+    # Monday of this week at 00:00. weekday(): Mon=0..Sun=6.
+    this_monday = today.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=today.weekday())
+    last_monday = this_monday - timedelta(days=7)
+    return last_monday, this_monday, 7
 
 
 def _resolve_date_range(
     start: Optional[str],
     end: Optional[str],
     days: Optional[int],
+    weekly: bool,
     monthly: bool,
 ) -> Tuple[datetime, datetime, int]:
     """Return (start_dt, end_dt, days_label) — days_label feeds filename/title decoration."""
-    provided = sum(bool(x) for x in (start or end, days, monthly))
+    provided = sum(bool(x) for x in (start or end, days, weekly, monthly))
     if provided == 0:
         raise click.UsageError(
-            "You must provide one of: --days/-d, --monthly, or --start with --end."
+            "You must provide one of: --days/-d, --weekly, --monthly, or --start with --end."
         )
-    if (start and end) and (days or monthly):
+    if provided > 1:
         raise click.UsageError(
-            "--start/--end cannot be combined with --days or --monthly."
+            "--days, --weekly, --monthly, and --start/--end are mutually exclusive."
         )
-    if days and monthly:
-        raise click.UsageError("--days and --monthly are mutually exclusive.")
 
     if start and end:
         try:
@@ -58,10 +68,10 @@ def _resolve_date_range(
         return start_dt, end_dt, max((end_dt - start_dt).days, 1)
 
     if monthly:
-        end_dt = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
-        span = _days_in_previous_month(end_dt)
-        start_dt = end_dt - timedelta(days=span)
-        return start_dt, end_dt, span
+        return _previous_calendar_month(datetime.now())
+
+    if weekly:
+        return _previous_calendar_week(datetime.now())
 
     # days path
     if days <= 0:
@@ -124,10 +134,13 @@ Output location:
 @click.option('--start', type=str, help='Start date in the format yyyy-mm-dd.')
 @click.option('--end', type=str, help='End date in the format yyyy-mm-dd.')
 @click.option('--days', '-d', type=int,
-              help='Number of days to include in the report (if --start/--end are not provided).')
+              help='Rolling window of N days ending now. For ad-hoc/testing.')
+@click.option('--weekly', is_flag=True, default=False,
+              help='Report on the previous calendar week (Mon 00:00 → next Mon 00:00). '
+                   'Independent of run time.')
 @click.option('--monthly', is_flag=True, default=False,
-              help='Auto-size the rolling window to the number of days in the previous '
-                   'calendar month. Mutually exclusive with --days and --start/--end.')
+              help='Report on the previous calendar month (1st 00:00 → 1st of this month 00:00). '
+                   'Independent of run time.')
 @click.option('--min-y', 'min_y', type=int, default=None,
               help='Minimum y-axis value for charts (overrides config).')
 @click.option('--config', '--report-config', 'report_config_path', type=click.Path(),
@@ -146,6 +159,7 @@ def cli(
     start: Optional[str],
     end: Optional[str],
     days: Optional[int],
+    weekly: bool,
     monthly: bool,
     tag: Optional[str],
     caption: Optional[str],
@@ -173,7 +187,7 @@ def cli(
             "pass both for single-section mode, neither to use report_config.json."
         )
 
-    start_date, end_date, days_label = _resolve_date_range(start, end, days, monthly)
+    start_date, end_date, days_label = _resolve_date_range(start, end, days, weekly, monthly)
 
     try:
         html_dir, pdf_dir = resolve_dirs(output_dir)

@@ -44,9 +44,10 @@ The CLI runs in one of two modes, decided by whether `-c` and `-t` are passed:
 | Flag                                          | Required | Notes |
 | --------------------------------------------- | -------- | ----- |
 | `--db PATH`                                   | yes¹     | Path to the Uptime Kuma SQLite database. Falls back to `$DB_PATH` from `.env`.                                 |
-| `-d, --days INT`                              | one of   | Number of days back from now.                                                                                  |
-| `--monthly`                                   | one of   | Rolling window sized to the number of days in the previous calendar month. Mutually exclusive with `--days` / `--start`. |
-| `--start YYYY-MM-DD` / `--end YYYY-MM-DD`     | one of   | Explicit date range (alternative to `--days`/`--monthly`).                                                     |
+| `-d, --days INT`                              | one of   | Rolling window of N days ending now. Good for ad-hoc reports.                                                  |
+| `--weekly`                                    | one of   | The previous calendar week (Mon 00:00 → next Mon 00:00). Independent of run time.                              |
+| `--monthly`                                   | one of   | The previous calendar month (1st 00:00 → 1st of this month 00:00). Independent of run time.                    |
+| `--start YYYY-MM-DD` / `--end YYYY-MM-DD`     | one of   | Explicit date range (alternative to the above).                                                                |
 | `-c, --caption TEXT`                          | paired   | Single-section chart title. Must be passed with `-t`.                                                          |
 | `-t, --tag TEXT`                              | paired   | Single-section monitor tag. Must be passed with `-c`.                                                          |
 | `--min-y INT`                                 | no       | Minimum y-axis value. Overrides `global_settings.min_y` in the config.                                         |

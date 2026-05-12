@@ -7,7 +7,7 @@ cd "$runner_path"
 source "$runner_path/.venv/bin/activate"
 
 case "$MODE" in
-  weekly)  kuma-uptime-report -d 7 --send-email ;;
+  weekly)  kuma-uptime-report --weekly  --send-email ;;
   monthly) kuma-uptime-report --monthly --send-email ;;
   *) echo "Unknown mode: $MODE (expected 'weekly' or 'monthly')" >&2; exit 2 ;;
 esac

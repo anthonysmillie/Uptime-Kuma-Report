@@ -55,10 +55,10 @@ def send(payload: dict, timeout: int = 30) -> requests.Response:
         auth=HTTPBasicAuth(username, password),
         timeout=timeout,
     )
+    sys.stderr.write(
+        f"Email API response: {response.status_code} {response.reason}\n"
+        f"Body: {response.text}\n"
+    )
     if not response.ok:
-        sys.stderr.write(
-            f"Email API POST failed: {response.status_code} {response.reason}\n"
-            f"Body: {response.text}\n"
-        )
         response.raise_for_status()
     return response
