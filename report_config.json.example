@@ -1,0 +1,18 @@
+{
+  "global_settings": {
+    "min_y": 80
+  },
+  "header": {
+    "name": "UptimeKuma Uptime Report",
+    "tag": "Parents"
+  },
+  "sections": [
+    { "name": "UptimeKuma API Uptime",              "tag": "api" },
+    { "name": "UptimeKuma Custom Hostnames Uptime", "tag": "hostnames" },
+    { "name": "UptimeKuma Live Installs Uptime",    "tag": "live" },
+    { "name": "UptimeKuma MTA Uptime",              "tag": "mta" },
+    { "name": "UptimeKuma SMTP Services Uptime",    "tag": "smtp" },
+    { "name": "UptimeKuma Website Uptime",          "tag": "website" },
+    { "name": "UptimeKuma DevQA Uptime",            "tag": "devqa" }
+  ]
+}

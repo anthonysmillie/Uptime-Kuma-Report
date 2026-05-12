@@ -1,0 +1,26 @@
+{
+  "body": {
+    "text": "Please find the latest Uptime Kuma report attached."
+  },
+  "headers": {
+    "subject": "Uptime Kuma Report",
+    "from": {
+      "email": "sender@example.com",
+      "name": "Uptime Kuma Reports"
+    },
+    "to": [
+      {
+        "email": "recipient@example.com",
+        "name": "Recipient Name"
+      }
+    ]
+  },
+  "attachments": {
+    "data": [
+      {
+        "filename": "report.pdf",
+        "data": ""
+      }
+    ]
+  }
+}
