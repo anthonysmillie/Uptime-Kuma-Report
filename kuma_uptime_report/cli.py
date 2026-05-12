@@ -20,7 +20,12 @@ from .report import (
 
 
 def _previous_calendar_month(today: datetime) -> Tuple[datetime, datetime, int]:
-    """The full previous calendar month. Returns (start, end_exclusive, day_count)."""
+    """The full previous calendar month. Returns (start, end_inclusive, day_count).
+
+    `end` is the last microsecond of the last covered day so display formatting
+    shows the correct date; SQL uses `time < end` which is still effectively the
+    full range (the lost microsecond is irrelevant).
+    """
     first_of_current = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     if first_of_current.month == 1:
         prev_year, prev_month = first_of_current.year - 1, 12
@@ -28,15 +33,16 @@ def _previous_calendar_month(today: datetime) -> Tuple[datetime, datetime, int]:
         prev_year, prev_month = first_of_current.year, first_of_current.month - 1
     days_in_prev = calendar.monthrange(prev_year, prev_month)[1]
     start = datetime(prev_year, prev_month, 1)
-    return start, first_of_current, days_in_prev
+    end = first_of_current - timedelta(microseconds=1)
+    return start, end, days_in_prev
 
 
 def _previous_calendar_week(today: datetime) -> Tuple[datetime, datetime, int]:
-    """The full previous Mon-Sun. Returns (start, end_exclusive, 7)."""
-    # Monday of this week at 00:00. weekday(): Mon=0..Sun=6.
+    """The full previous Mon-Sun. Returns (start=Mon 00:00, end=Sun 23:59:59.999999, 7)."""
     this_monday = today.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=today.weekday())
     last_monday = this_monday - timedelta(days=7)
-    return last_monday, this_monday, 7
+    last_sunday_end = this_monday - timedelta(microseconds=1)
+    return last_monday, last_sunday_end, 7
 
 
 def _resolve_date_range(
