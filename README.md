@@ -43,7 +43,7 @@ The CLI runs in one of two modes, decided by whether `-c` and `-t` are passed:
 
 | Flag                                          | Required | Notes |
 | --------------------------------------------- | -------- | ----- |
-| `--db PATH`                                   | yes      | Path to the Uptime Kuma SQLite database.                                                                       |
+| `--db PATH`                                   | yes¹     | Path to the Uptime Kuma SQLite database. Falls back to `$DB_PATH` from `.env`.                                 |
 | `-d, --days INT`                              | one of   | Number of days back from now.                                                                                  |
 | `--start YYYY-MM-DD` / `--end YYYY-MM-DD`     | one of   | Explicit date range (alternative to `--days`).                                                                 |
 | `-c, --caption TEXT`                          | paired   | Single-section chart title. Must be passed with `-t`.                                                          |
@@ -55,6 +55,8 @@ The CLI runs in one of two modes, decided by whether `-c` and `-t` are passed:
 | `--pdf`                                       | no       | Also render a PDF copy. No email is sent.                                                                      |
 | `--send-email`                                | no       | Render a PDF and POST it to `$API_ENDPOINT` using basic auth. PDF is also saved to disk.                       |
 | `--help`                                      |          | Show full help.                                                                                                |
+
+¹ Required either on the CLI or as `DB_PATH` in `.env`.
 
 ## Output location
 
@@ -121,6 +123,9 @@ API_ENDPOINT=https://mail-api.example.com/send
 API_USERNAME=your-username
 API_PASSWORD=your-password
 
+# Optional default DB path used when --db is omitted.
+# DB_PATH=/opt/docker-mounts/uptimekuma/kuma.db
+
 # Optional default output location used when -o is omitted.
 # REPORT_PATH=/opt/KumaReport/Reports
 
@@ -133,13 +138,14 @@ API_PASSWORD=your-password
 
 ```bash
 # Multi-section weekly report → HTML only, written to $REPORT_PATH/html.
-kuma-uptime-report --db /opt/docker-mounts/uptimekuma/kuma.db -d 7
+# (Assumes DB_PATH and REPORT_PATH are set in .env.)
+kuma-uptime-report -d 7
 
 # Multi-section + PDF, written to an ad-hoc directory.
 kuma-uptime-report --db kuma.db -d 7 --pdf -o /tmp/this-week
 
 # Multi-section + PDF + email via the API (typical cron invocation).
-kuma-uptime-report --db /opt/docker-mounts/uptimekuma/kuma.db -d 7 --send-email
+kuma-uptime-report -d 7 --send-email
 
 # Single-section ad-hoc report (skips report_config.json entirely).
 kuma-uptime-report --db kuma.db -d 30 -c "API uptime - last 30 days" -t api -o /tmp/api-report
@@ -156,8 +162,10 @@ and the config JSONs live) and, on macOS, `DYLD_FALLBACK_LIBRARY_PATH`:
 ```bash
 #!/bin/bash
 cd /opt/KumaReport
-kuma-uptime-report --db /opt/docker-mounts/uptimekuma/kuma.db -d 7 --send-email
+kuma-uptime-report -d 7 --send-email
 ```
+
+(`DB_PATH` and `REPORT_PATH` in `.env` cover everything else.)
 
 The previous 8-invocation bash wrapper that concatenated HTML fragments and emailed
 via the local MTA is no longer needed.

@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -87,8 +88,8 @@ Output location:
               help='Chart title (single-section mode). Must be used together with -t.')
 @click.option('--tag', '-t', type=str, default=None,
               help='Monitor tag (single-section mode). Must be used together with -c.')
-@click.option('--db', type=click.Path(exists=True), required=True,
-              help='Path to the Uptime Kuma SQLite database.')
+@click.option('--db', type=click.Path(), default=None,
+              help='Path to the Uptime Kuma SQLite database. Falls back to $DB_PATH from .env.')
 @click.option('--start', type=str, help='Start date in the format yyyy-mm-dd.')
 @click.option('--end', type=str, help='End date in the format yyyy-mm-dd.')
 @click.option('--days', '-d', type=int,
@@ -107,7 +108,7 @@ Output location:
 @click.option('--send-email', is_flag=True, default=False,
               help='Render a PDF and POST it to the configured email API.')
 def cli(
-    db: str,
+    db: Optional[str],
     start: Optional[str],
     end: Optional[str],
     days: Optional[int],
@@ -121,6 +122,15 @@ def cli(
     send_email: bool,
 ):
     load_env()
+
+    if not db:
+        db = os.environ.get("DB_PATH")
+    if not db:
+        raise click.UsageError(
+            "Database path required. Pass --db or set DB_PATH in your .env."
+        )
+    if not Path(db).exists():
+        raise click.UsageError(f"Database file not found: {db}")
 
     if (caption is None) ^ (tag is None):
         raise click.UsageError(

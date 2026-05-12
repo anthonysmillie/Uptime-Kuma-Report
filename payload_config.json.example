@@ -1,6 +1,6 @@
 {
   "body": {
-    "text": "Please find the latest Uptime Kuma report attached."
+    "html": "<html><body><p>Please find the latest Uptime Kuma report attached.</p></body></html>"
   },
   "headers": {
     "subject": "Uptime Kuma Report",
