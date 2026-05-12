@@ -1,3 +1,4 @@
+import calendar
 import os
 import sys
 from datetime import datetime, timedelta
@@ -18,10 +19,34 @@ from .report import (
 )
 
 
+def _days_in_previous_month(today: datetime) -> int:
+    """Days in the calendar month immediately preceding `today`."""
+    if today.month == 1:
+        prev_year, prev_month = today.year - 1, 12
+    else:
+        prev_year, prev_month = today.year, today.month - 1
+    return calendar.monthrange(prev_year, prev_month)[1]
+
+
 def _resolve_date_range(
-    start: Optional[str], end: Optional[str], days: Optional[int]
+    start: Optional[str],
+    end: Optional[str],
+    days: Optional[int],
+    monthly: bool,
 ) -> Tuple[datetime, datetime, int]:
     """Return (start_dt, end_dt, days_label) — days_label feeds filename/title decoration."""
+    provided = sum(bool(x) for x in (start or end, days, monthly))
+    if provided == 0:
+        raise click.UsageError(
+            "You must provide one of: --days/-d, --monthly, or --start with --end."
+        )
+    if (start and end) and (days or monthly):
+        raise click.UsageError(
+            "--start/--end cannot be combined with --days or --monthly."
+        )
+    if days and monthly:
+        raise click.UsageError("--days and --monthly are mutually exclusive.")
+
     if start and end:
         try:
             start_dt = datetime.strptime(start, "%Y-%m-%d").replace(hour=0, minute=0, second=0, microsecond=0)
@@ -31,13 +56,19 @@ def _resolve_date_range(
         if start_dt >= end_dt:
             raise click.UsageError("Start date must be before end date.")
         return start_dt, end_dt, max((end_dt - start_dt).days, 1)
-    if days:
-        if days <= 0:
-            raise click.UsageError("Number of days must be greater than zero.")
+
+    if monthly:
         end_dt = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
-        start_dt = end_dt - timedelta(days=days)
-        return start_dt, end_dt, days
-    raise click.UsageError("You must provide either --start and --end or --days.")
+        span = _days_in_previous_month(end_dt)
+        start_dt = end_dt - timedelta(days=span)
+        return start_dt, end_dt, span
+
+    # days path
+    if days <= 0:
+        raise click.UsageError("Number of days must be greater than zero.")
+    end_dt = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+    start_dt = end_dt - timedelta(days=days)
+    return start_dt, end_dt, days
 
 
 def _resolve_sections(
@@ -94,6 +125,9 @@ Output location:
 @click.option('--end', type=str, help='End date in the format yyyy-mm-dd.')
 @click.option('--days', '-d', type=int,
               help='Number of days to include in the report (if --start/--end are not provided).')
+@click.option('--monthly', is_flag=True, default=False,
+              help='Auto-size the rolling window to the number of days in the previous '
+                   'calendar month. Mutually exclusive with --days and --start/--end.')
 @click.option('--min-y', 'min_y', type=int, default=None,
               help='Minimum y-axis value for charts (overrides config).')
 @click.option('--config', '--report-config', 'report_config_path', type=click.Path(),
@@ -112,6 +146,7 @@ def cli(
     start: Optional[str],
     end: Optional[str],
     days: Optional[int],
+    monthly: bool,
     tag: Optional[str],
     caption: Optional[str],
     min_y: Optional[int],
@@ -138,7 +173,7 @@ def cli(
             "pass both for single-section mode, neither to use report_config.json."
         )
 
-    start_date, end_date, days_label = _resolve_date_range(start, end, days)
+    start_date, end_date, days_label = _resolve_date_range(start, end, days, monthly)
 
     try:
         html_dir, pdf_dir = resolve_dirs(output_dir)
