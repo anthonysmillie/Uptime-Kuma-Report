@@ -1,3 +1,4 @@
+import base64
 import io
 from datetime import datetime
 from typing import List, Optional
@@ -62,19 +63,23 @@ def chart_plotly(
     return fig
 
 
-def chart_matplotlib_svg(
+def chart_matplotlib_png_data_uri(
         report_data: List[dict],
         caption: Optional[str] = None,
         min_y: int = 0,
 ) -> str:
-    """Render a static bar chart as inline SVG markup for embedding in HTML."""
+    """Render a static bar chart as a base64 PNG data URI for <img src=...>.
+
+    PNG (not SVG) because WeasyPrint 51's SVG renderer cannot handle matplotlib's
+    SVG output cleanly — it drops the chart content and leaks the <metadata> text.
+    """
     if not report_data:
         raise ValueError("No uptime data available for the selected period.")
 
     names = [row["Name"] for row in report_data]
     uptimes = [row["Uptime"] for row in report_data]
 
-    fig, ax = plt.subplots(figsize=(11, 5.5))
+    fig, ax = plt.subplots(figsize=(11, 5.5), dpi=150)
     ax.bar(names, uptimes, color="#1f77b4")
     ax.set_ylim(min_y, 100)
     ax.set_ylabel("Uptime (%)")
@@ -85,9 +90,8 @@ def chart_matplotlib_svg(
         label.set_horizontalalignment("right")
     fig.tight_layout()
 
-    buf = io.StringIO()
-    fig.savefig(buf, format="svg")
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight")
     plt.close(fig)
-    svg = buf.getvalue()
-    start_idx = svg.find("<svg")
-    return svg[start_idx:] if start_idx != -1 else svg
+    encoded = base64.b64encode(buf.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"

@@ -3,7 +3,7 @@ from datetime import datetime
 from html import escape
 from typing import List, Optional
 
-from .chart import chart_matplotlib_svg, chart_plotly, fetch_report_data
+from .chart import chart_matplotlib_png_data_uri, chart_plotly, fetch_report_data
 
 
 class ReportSection:
@@ -96,19 +96,19 @@ def build_static_html(
     days: Optional[int],
     min_y: int,
 ) -> str:
-    """Build a print-friendly HTML doc with inline matplotlib SVG charts (for WeasyPrint PDF)."""
+    """Build a print-friendly HTML doc with matplotlib PNG charts (for WeasyPrint PDF)."""
     captioned = _section_captions(header, sections, days, start, end)
     title = captioned[0][1]
 
     blocks = []
     for idx, (section, caption) in enumerate(captioned):
         data = fetch_report_data(start, end, section.tag)
-        svg = chart_matplotlib_svg(data, caption=caption, min_y=min_y)
+        png_uri = chart_matplotlib_png_data_uri(data, caption=caption, min_y=min_y)
         page_break = "" if idx == 0 else 'style="page-break-before: always;"'
         blocks.append(
             f'<section class="kuma-section" {page_break}>\n'
             f'<h2>{escape(section.name)}</h2>\n'
-            f'{svg}\n'
+            f'<img src="{png_uri}" alt="{escape(section.name)}">\n'
             f'</section>'
         )
 
@@ -123,7 +123,7 @@ def build_static_html(
   body {{ font-family: "Helvetica", "Arial", sans-serif; }}
   h1 {{ font-size: 18pt; margin-bottom: 18pt; }}
   h2 {{ font-size: 13pt; margin: 0 0 6pt 0; }}
-  .kuma-section svg {{ width: 100%; height: auto; }}
+  .kuma-section img {{ width: 100%; height: auto; }}
 </style>
 </head>
 <body>
