@@ -4,7 +4,7 @@ import copy
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Union
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -22,7 +22,7 @@ def _date_range_suffix(days: Optional[int], start: datetime, end: datetime) -> s
 
 def build_payload(
     template: dict,
-    attachment_path: str,
+    attachment_paths: Union[str, List[str]],
     days: Optional[int],
     start: datetime,
     end: datetime,
@@ -33,16 +33,17 @@ def build_payload(
     subject = headers.get("subject", "")
     headers["subject"] = f"{subject}{_date_range_suffix(days, start, end)}"
 
-    path = Path(attachment_path)
-    with path.open("rb") as f:
-        encoded = base64.b64encode(f.read()).decode("ascii")
+    if isinstance(attachment_paths, str):
+        attachment_paths = [attachment_paths]
 
     attachments = payload.setdefault("attachments", {})
-    data_list = attachments.setdefault("data", [])
-    if not data_list:
-        data_list.append({})
-    data_list[0]["filename"] = path.name
-    data_list[0]["data"] = encoded
+    data_list = []
+    for attachment_path in attachment_paths:
+        path = Path(attachment_path)
+        with path.open("rb") as f:
+            encoded = base64.b64encode(f.read()).decode("ascii")
+        data_list.append({"filename": path.name, "data": encoded})
+    attachments["data"] = data_list
 
     return payload
 

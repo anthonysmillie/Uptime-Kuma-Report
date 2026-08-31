@@ -123,7 +123,8 @@ Modes:
 
 Output:
   HTML is always written. Pass --pdf to also write a PDF (no email). Pass --send-email
-  to write the PDF and POST it to $API_ENDPOINT with basic auth.
+  to write the PDF and POST it to $API_ENDPOINT with basic auth. Add --include-html
+  alongside --send-email to attach the HTML copy too (one email, both attachments).
 
 Output location:
   -o/--output DIR overrides everything (both files dropped into DIR).
@@ -160,6 +161,9 @@ Output location:
               help='Also render a PDF copy alongside the HTML. No email is sent.')
 @click.option('--send-email', is_flag=True, default=False,
               help='Render a PDF and POST it to the configured email API.')
+@click.option('--include-html', 'include_html', is_flag=True, default=False,
+              help='When used with --send-email, attach the HTML copy alongside the PDF '
+                   '(one email, both attachments).')
 def cli(
     db: Optional[str],
     start: Optional[str],
@@ -175,6 +179,7 @@ def cli(
     output_dir: Optional[str],
     pdf_flag: bool,
     send_email: bool,
+    include_html: bool,
 ):
     load_env()
 
@@ -192,6 +197,9 @@ def cli(
             "--caption/-c and --tag/-t must be passed together; "
             "pass both for single-section mode, neither to use report_config.json."
         )
+
+    if include_html and not send_email:
+        raise click.UsageError("--include-html requires --send-email.")
 
     start_date, end_date, days_label = _resolve_date_range(start, end, days, weekly, monthly)
 
@@ -236,9 +244,13 @@ def cli(
 
         if send_email and pdf_path is not None:
             payload_template = load_payload_config(payload_config_path)
-            payload = build_payload(payload_template, str(pdf_path), days_label, start_date, end_date)
+            attachment_paths = [str(pdf_path)]
+            if include_html:
+                attachment_paths.append(str(html_path))
+            payload = build_payload(payload_template, attachment_paths, days_label, start_date, end_date)
             send(payload)
-            click.echo(f"Report emailed; PDF attached as {pdf_path.name}.", err=True)
+            attached = ", ".join(Path(p).name for p in attachment_paths)
+            click.echo(f"Report emailed; attached: {attached}.", err=True)
 
     except ValueError as e:
         click.echo(f"Error: {e}", err=True)
