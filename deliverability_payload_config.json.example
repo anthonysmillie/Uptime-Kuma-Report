@@ -1,0 +1,26 @@
+{
+  "body": {
+    "html": "<html><body><p>Please find the Everlytic Weekly Deliverability Report attached.</p></body></html>"
+  },
+  "headers": {
+    "subject": "Everlytic Weekly Deliverability Report",
+    "from": {
+      "email": "sender@example.com",
+      "name": "Everlytic Deliverability Reports"
+    },
+    "to": [
+      {
+        "email": "recipient@example.com",
+        "name": "Recipient Name"
+      }
+    ]
+  },
+  "attachments": {
+    "data": [
+      {
+        "filename": "report.docx",
+        "data": ""
+      }
+    ]
+  }
+}
