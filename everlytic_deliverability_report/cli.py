@@ -9,8 +9,10 @@ Flow: verify panels exist -> render -> verify renders -> delivery band check
 sends a FAILED notification (when --send-email) and exits non-zero.
 """
 import argparse
+import html
 import sys
 import tempfile
+import traceback
 
 from . import config
 from .dates import explicit_week, previous_week
@@ -120,6 +122,29 @@ def main(argv=None) -> int:
             if args.send_email:
                 from . import emailer
                 emailer.send_failure(template, window, [f], config.runner_command())
+                _log("FAILED notification email sent.")
+            else:
+                _log("email skipped (--send-email not set); not sending FAILED notice.")
+            return 1
+
+        except Exception as e:  # noqa: BLE001 - last-resort: never die silently
+            _log(f"UNEXPECTED ERROR: {e}")
+            _log(traceback.format_exc())
+            if args.send_email:
+                from . import emailer
+                synthetic = ValidationFailure(
+                    title="Report generation error",
+                    detail_html=(
+                        "<li>The report failed to generate due to an unexpected error: "
+                        f"<code>{html.escape(str(e))}</code></li>"
+                        "<li>This is most often a transient network or Grafana-availability "
+                        "issue (each panel is already retried a few times before giving up). "
+                        "Re-running usually resolves it; if it persists, confirm Grafana is "
+                        "reachable from the host and check the log.</li>"
+                    ),
+                    skippable=False,
+                )
+                emailer.send_failure(template, window, [synthetic], config.runner_command())
                 _log("FAILED notification email sent.")
             else:
                 _log("email skipped (--send-email not set); not sending FAILED notice.")

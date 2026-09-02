@@ -28,7 +28,7 @@ Claude office-skills plugin; docx surgery is stdlib `zipfile` + `lxml`.
 #### How report 2 works (pipeline in `cli.py:main`)
 1. Resolve the SAST week window (`dates.py`).
 2. **Validate panels exist** (`validate.check_panels_exist`) via the Grafana dashboard API — structural, non-skippable.
-3. **Render** all panels (`render.py`, playwright-python → headless Chromium screenshotting Grafana `/d-solo` views, auth via `Authorization: Bearer <SA token>`). The Grafana Image Renderer plugin is NOT installed, hence local rendering.
+3. **Render** all panels (`render.py`, playwright-python → headless Chromium screenshotting Grafana `/d-solo` views, auth via `Authorization: Bearer <SA token>`). The Grafana Image Renderer plugin is NOT installed, hence local rendering. Each panel is retried on transient Playwright/network errors (e.g. `net::ERR_NETWORK_CHANGED`) and on a stat value that fails to paint; tune with `RENDER_ATTEMPTS` (default 3) / `RENDER_BACKOFF_BASE` (default 3s). If a panel still fails after retries — or any other unexpected error occurs — a FAILED email is sent (when `--send-email`) instead of crashing silently.
 4. **Validate renders non-empty** — structural, non-skippable.
 5. **Delivery-volume band check** (`validate.check_delivery_band`) — skippable via `--skip-delivery-validation`.
 6. **Compose** panels into slot images (`compose.py`, Pillow), **build** the docx (`docxbuild.py`), **verify**.
@@ -54,7 +54,7 @@ on per-srcMta log volume. Delivered volume = ClickHouse `count(distinct header_M
 
 ## Shared plumbing
 - **Email**: `kuma_uptime_report/email_send.py` (POST + HTTP Basic Auth to `$API_ENDPOINT`). Both reports build a payload from a JSON template and attach a base64 file.
-- **`.env`** (repo root, git-ignored): `API_ENDPOINT/API_USERNAME/API_PASSWORD` (shared), plus for report 2: `GRAFANA_URL`, `GRAFANA_SERVICE_ACCOUNT_TOKEN` (SA needs org-Admin — the dashboards are in a permissioned "Delivery" folder), optional `REPORT_PATH`, `DELIVERABILITY_PAYLOAD_JSON`, `RUNNER_PATH`.
+- **`.env`** (repo root, git-ignored): `API_ENDPOINT/API_USERNAME/API_PASSWORD` (shared), plus for report 2: `GRAFANA_URL`, `GRAFANA_SERVICE_ACCOUNT_TOKEN` (SA needs org-Admin — the dashboards are in a permissioned "Delivery" folder), optional `REPORT_PATH`, `DELIVERABILITY_PAYLOAD_JSON`, `RUNNER_PATH`, `RENDER_ATTEMPTS`, `RENDER_BACKOFF_BASE`.
 - **Payload templates**: `payload_config.json` (Kuma), `deliverability_payload_config.json` (deliverability). `.example` files are committed.
 - **Cron dispatcher**: `generate_scheduled_report.sh <mode>` — activates the venv and runs one report. Modes: `weekly`, `monthly`, `weekly-html`, `monthly-html` (Kuma), `deliverability-weekly` (+ optional `--skip-delivery-validation` forwarded). **Each report is a SEPARATE cron entry** so one failing never blocks the other.
 
