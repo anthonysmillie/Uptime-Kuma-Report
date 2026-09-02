@@ -12,9 +12,10 @@ class Window(NamedTuple):
     end: datetime            # tz-aware SAST, Sun 23:59:59.999999
     from_ms: int             # epoch millis for Grafana `from`
     to_ms: int               # epoch millis for Grafana `to`
-    stamp_title: str         # "dd-mm-yyyy" (week-end Sunday) for the docx title page
-    stamp_version: str       # "dd/mm/yyyy" for the version-control table
+    stamp_title: str         # "dd-mm-yyyy" (week-end Sunday) — used for the output filename
     subject_range: str       # "dd/mm/yyyy-dd/mm/yyyy" for the email subject
+    run_title: str           # "dd-mm-yyyy" run/generation date — stamped on the title page
+    run_version: str         # "dd/mm/yyyy" run/generation date — stamped in the version table
 
 
 def _to_ms(dt: datetime) -> int:
@@ -46,12 +47,14 @@ def explicit_week(start_date: str, end_date: str) -> Window:
 
 
 def _build(start: datetime, end: datetime) -> Window:
+    run = datetime.now(SAST)  # actual generation date, in SAST
     return Window(
         start=start,
         end=end,
         from_ms=_to_ms(start),
         to_ms=_to_ms(end),
         stamp_title=end.strftime("%d-%m-%Y"),
-        stamp_version=end.strftime("%d/%m/%Y"),
         subject_range=f"{start.strftime('%d/%m/%Y')}-{end.strftime('%d/%m/%Y')}",
+        run_title=run.strftime("%d-%m-%Y"),
+        run_version=run.strftime("%d/%m/%Y"),
     )

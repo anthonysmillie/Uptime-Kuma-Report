@@ -50,11 +50,14 @@ SLOTS = [
         {"dash": "B", "id": 78, "vw": 720, "vh": 330}]},
 ]
 
-# Date strings baked into the pristine template (assets/template.docx). The builder finds
-# these exact strings (char-split across runs) and rewrites them to the reporting week's
-# stamp. If you swap the template, update these to match its baked-in dates.
-TEMPLATE_TITLE_DATE = "15-07-2026"      # appears twice (title page)
-TEMPLATE_VERSION_DATE = "12/05/2026"    # version-control table
+# Text baked into the pristine template (assets/template.docx). The builder finds these
+# exact strings (some char-split across runs) and rewrites them. The two dates are stamped
+# with the report's RUN/generation date (not the reporting week). If you swap the template,
+# update these to match its baked-in values.
+TEMPLATE_TITLE_DATE = "15-07-2026"          # appears twice (title page) -> run date
+TEMPLATE_VERSION_DATE = "12/05/2026"        # version-control "Date of Update" -> run date
+TEMPLATE_EDITOR = "Anthony Smillie"         # version-control "Last Edited by"
+EDITOR_REPLACEMENT = "Report Automation"    # generic automated-author label
 
 # Cover + header/footer logos — never touched.
 PROTECTED_MEDIA = {"image1.png", "image11.png", "image12.emf", "image13.png"}

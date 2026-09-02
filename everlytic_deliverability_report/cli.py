@@ -103,10 +103,11 @@ def main(argv=None) -> int:
             sizes = compose_all(panels_dir, final_dir)
             out_dir = config.output_dir(args.output)
             out_dir.mkdir(parents=True, exist_ok=True)
+            # Filename keeps the reporting-week (Sunday) date; the in-doc stamps use the run date.
             out_path = str(out_dir / f"Everlytic Weekly Deliverability Report - {window.stamp_title}.docx")
             docxbuild.build(config.template_docx(), final_dir, sizes,
-                            window.stamp_title, window.stamp_version, out_path)
-            docxbuild.verify(out_path, window.stamp_title, sizes)
+                            window.run_title, window.run_version, out_path)
+            docxbuild.verify(out_path, window.run_title, sizes)
             _log(f"report built: {out_path}")
 
             # 6) email or leave on disk

@@ -75,6 +75,6 @@ python -m everlytic_deliverability_report --start 2026-08-24 --end 2026-08-30
 ```
 
 ## Conventions
-- Report 2's title/version date stamp = the reporting week's **Sunday** (week-end), format `dd-mm-yyyy` / `dd/mm/yyyy`.
+- Report 2 stamps the title page + version-table "Date of Update" with the **run/generation date** (`dd-mm-yyyy` / `dd/mm/yyyy`), and "Last Edited by" with the generic **"Report Automation"**. The **output filename** uses the reporting week's **Sunday** (week-end) date, so files stay identifiable by the week they cover.
 - Keep report 2 dependency-light and self-contained; do not reintroduce a dependency on the office-skills plugin.
 - Secrets only in `.env`, never committed.
